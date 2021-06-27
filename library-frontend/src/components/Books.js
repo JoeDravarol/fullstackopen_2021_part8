@@ -1,19 +1,31 @@
-import React from 'react'
-import { useQuery } from '@apollo/client'
+import React, { useState, useEffect } from 'react'
+import { useLazyQuery } from '@apollo/client'
 import { ALL_BOOKS } from '../queries'
+import GenreButtons from './GenreButtons'
 
 const Books = (props) => {
-  const result = useQuery(ALL_BOOKS)
+  const [allBooks, result] = useLazyQuery(ALL_BOOKS)
+  const [books, setBooks] = useState([])
+
+  useEffect(() => {
+    allBooks()
+  }, []) // eslint-disable-line
+
+  useEffect(() => {
+    if (result.data) {
+      setBooks(result.data.allBooks)
+    }
+  }, [result.data]) 
 
   if (!props.show) {
     return null
   }
 
-  if (result.loading) {
-    return <div>loading...</div>
-  }
+  const genres = [...new Set( books.map(book => book.genres).flat() )]
 
-  const books = result.data.allBooks
+  const booksByGenre = (genre) => {
+    allBooks({ variables: { genre } })
+  }
 
   return (
     <div>
@@ -39,6 +51,7 @@ const Books = (props) => {
           )}
         </tbody>
       </table>
+      <GenreButtons genres={genres} getByGenre={booksByGenre} getAllGenre={allBooks} />
     </div>
   )
 }
