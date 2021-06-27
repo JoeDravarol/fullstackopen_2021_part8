@@ -4,7 +4,9 @@ import { ALL_BOOKS } from '../queries'
 import GenreButtons from './GenreButtons'
 
 const Books = (props) => {
-  const [allBooks, result] = useLazyQuery(ALL_BOOKS)
+  const [allBooks, result] = useLazyQuery(ALL_BOOKS, {
+    fetchPolicy: 'cache-and-network'
+  })
   const [books, setBooks] = useState([])
 
   useEffect(() => {

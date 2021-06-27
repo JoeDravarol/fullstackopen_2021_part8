@@ -4,7 +4,9 @@ import { ALL_BOOKS, ME } from '../queries'
 
 const Recommend = ({ show }) => {
   const user = useQuery(ME)
-  const [allBooks, result] = useLazyQuery(ALL_BOOKS)
+  const [allBooks, result] = useLazyQuery(ALL_BOOKS, {
+    fetchPolicy: 'cache-and-network'
+  })
   const [books, setBooks] = useState([])
 
   // User.data.me is default to null even after login
