@@ -41,7 +41,7 @@ const LoginForm = ({ show, setToken }) => {
         </div>
         <div>
           password
-          <input value={password} onChange={({ target }) => setPassword(target.value)} />
+          <input type='password' value={password} onChange={({ target }) => setPassword(target.value)} />
         </div>
         <button type='submit'>login</button>
       </form>
