@@ -17,6 +17,7 @@ mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTop
     console.log('error connection to MongoDB:', error.message)
   })
 
+mongoose.set('debug', true);
 
 const pubsub = new PubSub()
 
@@ -85,7 +86,9 @@ const JWT_SECRET = process.env.JWT_SECRET
 const resolvers = {
   Query: {
     bookCount: () => Book.collection.countDocuments(),
-    authorCount: () => Author.collection.countDocuments(),
+    authorCount: async () => {
+      return Author.collection.countDocuments()
+    },
     allBooks: async (root, args) => {
       if (args.genre) {
         return Book.find({ genres: { $in: args.genre }})
@@ -96,14 +99,20 @@ const resolvers = {
       
       return Book.find({})
     },
-    allAuthors: () => Author.find({}),
+    allAuthors: async () => {
+      const authors = await Author.find({}).lean()
+      const authorsWithBookCount = authors.map(author => {
+        const bookCount = author.books.length
+        return { ...author, id: author._id, bookCount }
+      })
+      console.log('author')
+      console.log(authors)
+      console.log('author bookCount')
+      console.log(authorsWithBookCount)
+      return authorsWithBookCount
+    },
     me: (root, args, context) => {
       return context.currentUser
-    }
-  },
-  Author: {
-    bookCount: (root) => {
-      return Book.collection.countDocuments({ author: root._id })
     }
   },
   Mutation: {
@@ -114,15 +123,18 @@ const resolvers = {
         throw new AuthenticationError('not authenticated')
       }
 
-      const existingAuthor = await Author.findOne({ name: args.author })
+      const author = await Author.findOne({ name: args.author })
 
       try {
-        if (!existingAuthor) {
-          const author = new Author({ name: args.author })
+        if (!author) {
+          const newAuthor = new Author({ name: args.author, books: [book._id] })
+          console.log(newAuthor)
+          book.author = newAuthor._id
+          await newAuthor.save()
+        } else {
+          author.books = author.books.concat(book._id)
           book.author = author._id
           await author.save()
-        } else {
-          book.author = existingAuthor._id
         }
   
         await book.save()
